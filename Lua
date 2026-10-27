@@ -1,0 +1,241 @@
+--[======================================================--
+--    ชื่อสคริป: พี่อ้วนสร้างสคริป
+--    ฟังก์ชัน: บิน, วิ่งไว, ล่องหน
+--======================================================--
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+-- สร้าง ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FatGuyScriptGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- สร้างหน้าต่างหลัก (Frame)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 240, 0, 320)
+mainFrame.Position = UDim2.new(0, 50, 0, 50)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true -- ทำให้ลากหน้าต่างไปมาได้
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
+
+-- หัวข้อสคริป
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+title.Text = "พี่อ้วนสร้างสคริป"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 16
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = title
+
+-- ==================== 1. ฟังก์ชันบิน ====================
+local flyActive = false
+local flySpeed = 50
+local bv, bg
+
+local function toggleFly()
+	flyActive = not flyActive
+	local character = player.Character
+	if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+	
+	if flyActive then
+		local hrp = character.HumanoidRootPart
+		bv = Instance.new("BodyVelocity")
+		bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+		bv.Velocity = Vector3.new(0, 0, 0)
+		bv.Parent = hrp
+		
+		bg = Instance.new("BodyGyro")
+		bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+		bg.CFrame = hrp.CFrame
+		bg.Parent = hrp
+		
+		RunService.RenderStepped:Connect(function()
+			if not flyActive then return end
+			local camera = workspace.CurrentCamera
+			local moveDirection = Vector3.new(0, 0, 0)
+			
+			if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+				moveDirection = moveDirection + camera.CFrame.LookVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+				moveDirection = moveDirection - camera.CFrame.LookVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+				moveDirection = moveDirection - camera.CFrame.RightVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+				moveDirection = moveDirection + camera.CFrame.RightVector
+			end
+			
+			bv.Velocity = moveDirection * flySpeed
+			bg.CFrame = camera.CFrame
+		end)
+	else
+		if bv then bv:Destroy() end
+		if bg then bg:Destroy() end
+	end
+end
+
+-- ==================== 2. ฟังก์ชันวิ่งไว ====================
+local speedActive = false
+local customSpeed = 50
+
+local function toggleSpeed()
+	speedActive = not speedActive
+	local character = player.Character
+	if character and character:FindFirstChild("Humanoid") then
+		if speedActive then
+			character.Humanoid.WalkSpeed = customSpeed
+		else
+			character.Humanoid.WalkSpeed = 16 -- ค่าเริ่มต้นของ Roblox
+		end
+	end
+end
+
+-- ==================== 3. ฟังก์ชันล่องหน ====================
+local invisibleActive = false
+
+local function toggleInvisible()
+	invisibleActive = not invisibleActive
+	local character = player.Character
+	if not character then return end
+	
+	for _, part in ipairs(character:GetDescendants()) do
+		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+			part.Transparency = invisibleActive and 1 or 0
+		elseif part:IsA("Accessory") then
+			local handle = part:FindFirstChild("Handle")
+			if handle then
+				handle.Transparency = invisibleActive and 1 or 0
+			end
+		end
+	end
+	
+	-- จัดการส่วนหน้า (Face)
+	local head = character:FindFirstChild("Head")
+	if head then
+		local face = head:FindFirstChild("face")
+		if face then
+			face.Transparency = invisibleActive and 1 or 0
+		end
+	end
+end
+
+-- ==================== สร้าง UI ปุ่มกด ====================
+
+-- ปุ่มบิน
+local flyButton = Instance.new("TextButton")
+flyButton.Size = UDim2.new(0, 200, 0, 35)
+flyButton.Position = UDim2.new(0, 20, 0, 55)
+flyButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+flyButton.Text = "บิน: ปิด"
+flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+flyButton.Font = Enum.Font.Gotham
+flyButton.TextSize = 14
+flyButton.Parent = mainFrame
+flyButton.MouseButton1Click:Connect(function()
+	toggleFly()
+	flyButton.Text = flyActive and "บิน: เปิด" or "บิน: ปิด"
+	flyButton.BackgroundColor3 = flyActive and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 60, 60)
+end)
+
+-- ปุ่มวิ่งไว
+local speedButton = Instance.new("TextButton")
+speedButton.Size = UDim2.new(0, 200, 0, 35)
+speedButton.Position = UDim2.new(0, 20, 0, 100)
+speedButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+speedButton.Text = "วิ่งไว: ปิด"
+speedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedButton.Font = Enum.Font.Gotham
+speedButton.TextSize = 14
+speedButton.Parent = mainFrame
+speedButton.MouseButton1Click:Connect(function()
+	toggleSpeed()
+	speedButton.Text = speedActive and "วิ่งไว: เปิด" or "วิ่งไว: ปิด"
+	speedButton.BackgroundColor3 = speedActive and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 60, 60)
+end)
+
+-- ปุ่มล่องหน
+local invButton = Instance.new("TextButton")
+invButton.Size = UDim2.new(0, 200, 0, 35)
+invButton.Position = UDim2.new(0, 20, 0, 145)
+invButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+invButton.Text = "ล่องหน: ปิด"
+invButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+invButton.Font = Enum.Font.Gotham
+invButton.TextSize = 14
+invButton.Parent = mainFrame
+invButton.MouseButton1Click:Connect(function()
+	toggleInvisible()
+	invButton.Text = invisibleActive and "ล่องหน: เปิด" or "ล่องหน: ปิด"
+	invButton.BackgroundColor3 = invisibleActive and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 60, 60)
+end)
+
+-- ช่องปรับความเร็วบิน
+local flySpeedBox = Instance.new("TextBox")
+flySpeedBox.Size = UDim2.new(0, 200, 0, 30)
+flySpeedBox.Position = UDim2.new(0, 20, 0, 190)
+flySpeedBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+flySpeedBox.Text = "ความเร็วบิน: 50"
+flySpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+flySpeedBox.Font = Enum.Font.Gotham
+flySpeedBox.TextSize = 12
+flySpeedBox.Parent = mainFrame
+flySpeedBox.FocusLost:Connect(function(enterPressed)
+	local num = tonumber(flySpeedBox.Text)
+	if num then
+		flySpeed = num
+		flySpeedBox.Text = "ความเร็วบิน: " .. flySpeed
+	else
+		flySpeedBox.Text = "ความเร็วบิน: " .. flySpeed
+	end
+end)
+
+-- ช่องปรับความเร็ววิ่ง
+local runSpeedBox = Instance.new("TextBox")
+runSpeedBox.Size = UDim2.new(0, 200, 0, 30)
+runSpeedBox.Position = UDim2.new(0, 20, 0, 235)
+runSpeedBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+runSpeedBox.Text = "ความเร็ววิ่ง: 50"
+runSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+runSpeedBox.Font = Enum.Font.Gotham
+runSpeedBox.TextSize = 12
+runSpeedBox.Parent = mainFrame
+runSpeedBox.FocusLost:Connect(function(enterPressed)
+	local num = tonumber(runSpeedBox.Text)
+	if num then
+		customSpeed = num
+		runSpeedBox.Text = "ความเร็ววิ่ง: " .. customSpeed
+		if speedActive and player.Character and player.Character:FindFirstChild("Humanoid") then
+			player.Character.Humanoid.WalkSpeed = customSpeed
+		end
+	else
+		runSpeedBox.Text = "ความเร็ววิ่ง: " .. customSpeed
+	end
+end)
+
+-- เครดิตด้านล่าง
+local credit = Instance.new("TextLabel")
+credit.Size = UDim2.new(1, 0, 0, 25)
+credit.Position = UDim2.new(0, 0, 1, -25)
+credit.BackgroundTransparency = 1
+credit.Text = "By พี่อ้วนสร้างสคริป"
+credit.TextColor3 = Color3.fromRGB(150, 150, 150)
+credit.TextSize = 11
+credit.Font = Enum.Font.GothamItalic
+credit.Parent = mainFrame
